@@ -7,7 +7,6 @@ from speechbrain.pretrained import EncoderClassifier
 import tempfile
 import os
 from pydub import AudioSegment
-import subprocess
 import time
 
 st.set_page_config(page_title="Accent Classifier", layout="centered")
@@ -31,33 +30,26 @@ classifier = load_speechbrain_classifier()
 def convert_to_wav(uploaded_file):
     suffix = os.path.splitext(uploaded_file.name)[1].lower()
 
-    if suffix == ".mp4":
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_video:
-            tmp_video.write(uploaded_file.read())
-            tmp_video.flush()
-            mp4_path = tmp_video.name
+    # Save uploaded file temporarily
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        tmp_file.flush()
+        temp_path = tmp_file.name
 
-        wav_path = mp4_path.replace(".mp4", ".wav")
+    # Load audio with pydub and convert to mono 16kHz wav
+    audio = AudioSegment.from_file(temp_path)
+    audio = audio.set_frame_rate(16000).set_channels(1)
 
-        command = [
-            "ffmpeg",
-            "-y",
-            "-i", mp4_path,
-            "-ar", "16000",
-            "-ac", "1",
-            wav_path
-        ]
-        subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    # Export to wav tempfile
+    wav_tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    wav_path = wav_tmp.name
+    wav_tmp.close()
+    audio.export(wav_path, format="wav")
 
-        os.unlink(mp4_path)
+    # Cleanup temp input file
+    os.unlink(temp_path)
 
-        return wav_path
-    else:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_wav:
-            audio = AudioSegment.from_file(uploaded_file)
-            audio = audio.set_frame_rate(16000).set_channels(1)
-            audio.export(tmp_wav.name, format="wav")
-            return tmp_wav.name
+    return wav_path
 
 def predict_accent(file_path):
     try:
