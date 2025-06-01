@@ -1,0 +1,12 @@
+streamlit
+pyngrok
+pydub
+speechbrain
+torchaudio
+joblib
+gdown
+scikit-learn
+numpy
+ffmpeg-python
+moviepy
+torch
