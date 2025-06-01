@@ -1,5 +1,6 @@
 streamlit
 pyngrok
+soundfile
 pydub
 speechbrain
 torchaudio
